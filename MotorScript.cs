@@ -78,7 +78,7 @@ public class MotorScript : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning("MeshRenderer bulunamadý: " + parent.name);
+                    Debug.LogWarning("MeshRenderer bulunamadÃ½: " + parent.name);
                 }
             }
         }
@@ -102,7 +102,7 @@ public class MotorScript : MonoBehaviour
 
         foreach (GameObject model in models)
         {
-            string modelName = model.name; // GameObject'un adýný al
+            string modelName = model.name; // GameObject'un adÃ½nÃ½ al
 
             modelNames.Add(modelName);
         }
@@ -315,7 +315,7 @@ public class MotorScript : MonoBehaviour
             Vector3 direction = new Vector3(0, 0, 0);
             if (childs2.Level[i] == level)
             {
-                switch (childs2.Direction[i])
+                /*switch (childs2.Direction[i])
                 {
                     case "-up":
                         direction = -childs2.Transforms[i].up;
@@ -326,7 +326,8 @@ public class MotorScript : MonoBehaviour
                     case "-right":
                         direction = -childs2.Transforms[i].right;
                         break;
-                }
+                }*/
+                direction = childs2.Transforms[i].position.normalized;
                 childs2.Transforms[i].position = Vector3.MoveTowards(childs2.Transforms[i].position, childs2.Transforms[i].position + direction, 5f * child_distance * Time.deltaTime);
             }
         }
