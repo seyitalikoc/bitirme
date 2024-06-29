@@ -14,7 +14,6 @@ public class MoveChilds2
 {
     public List<string> Name { get; set; }
     public List<Vector3> Position { get; set; }
-    public List<string> Direction { get; set; }
     public List<int> Level { get; set; }
     public List<Transform> Transforms { get; set; }
 
@@ -22,7 +21,6 @@ public class MoveChilds2
     {
         Name = new List<string>();
         Position = new List<Vector3>();
-        Direction = new List<string>();
         Level = new List<int>();
         Transforms = new List<Transform>();
     }
@@ -31,16 +29,14 @@ public class MoveChilds2
     {
         Name.Clear();
         Position.Clear();
-        Direction.Clear();
         Level.Clear();
         Transforms.Clear();
     }
 
-    public void VeriEkle(string name, Vector3 position, string direction, int level, Transform transforms)
+    public void VeriEkle(string name, Vector3 position, int level, Transform transforms)
     {
         Name.Add(name);
         Position.Add(position);
-        Direction.Add(direction);
         Level.Add(level);
         Transforms.Add(transforms);
     }
@@ -52,10 +48,9 @@ public class MotorScript : MonoBehaviour
 
     public int distance = 4;
     private int current_level = 0;
-    private int temp_distance = 4;
     public float movDuration = 2;
-    private string model_name = " ";
     public Transform model = null;
+    private int count = 0;
 
     public Dropdown Leveldropdown;
     public Dropdown Modeldropdown;
@@ -74,11 +69,13 @@ public class MotorScript : MonoBehaviour
                     parent.gameObject.AddComponent<MeshCollider>();
                     MeshCollider meshCollider = parent.gameObject.GetComponent<MeshCollider>();
                     meshCollider.sharedMesh = meshRenderer.GetComponent<MeshFilter>().sharedMesh;
-                    Debug.Log(parent.name + " Eklendi.");
+                    count++;
+                    childs2.VeriEkle(parent.gameObject.name, parent.position.normalized, 0, parent);
                 }
                 else
                 {
-                    Debug.LogWarning("MeshRenderer bulunamadý: " + parent.name);
+                    childs2.VeriEkle(parent.gameObject.name, parent.position.normalized, 0, parent);
+                    Debug.LogWarning("MeshRenderer bulunamadı: " + parent.name);
                 }
             }
         }
@@ -102,7 +99,7 @@ public class MotorScript : MonoBehaviour
 
         foreach (GameObject model in models)
         {
-            string modelName = model.name; // GameObject'un adýný al
+            string modelName = model.name; // GameObject'un adını al
 
             modelNames.Add(modelName);
         }
@@ -124,6 +121,7 @@ public class MotorScript : MonoBehaviour
         bool IsModelHasCenter = false;
 
         ColliderAdder(model);
+        print(count);
         Debug.Log("bitti.");
         List<Transform> mainparts = new List<Transform>();
         for (int i = 0; i < model.childCount; i++)
@@ -141,7 +139,7 @@ public class MotorScript : MonoBehaviour
                 {
                     if (!childs2.Transforms.Any(Transform => Transform == hit[i].collider.transform))
                     {
-                        childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, "-up", hit.Length - i, hit[i].collider.transform);
+                        childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, hit.Length - i, hit[i].collider.transform);
                     }
                 }
 
@@ -152,7 +150,7 @@ public class MotorScript : MonoBehaviour
                 {
                     if (!childs2.Transforms.Any(str => str == hit2[i].collider.transform))
                     {
-                        childs2.VeriEkle(hit2[i].collider.name, hit2[i].collider.transform.position, "up", hit2.Length - i, hit2[i].collider.transform);
+                        childs2.VeriEkle(hit2[i].collider.name, hit2[i].collider.transform.position, hit2.Length - i, hit2[i].collider.transform);
                     }
                 }
                 IsModelHasCenter = true;
@@ -165,7 +163,7 @@ public class MotorScript : MonoBehaviour
                 {
                     if (!childs2.Transforms.Any(str => str == hit[i].collider.transform))
                     {
-                        childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, "-right", hit.Length - i, hit[i].collider.transform);
+                        childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, hit.Length - i, hit[i].collider.transform);
                     }
                 }
             }
@@ -179,12 +177,11 @@ public class MotorScript : MonoBehaviour
             {
                 if (!childs2.Transforms.Any(Transform => Transform == hit[i].collider.transform))
                 {
-                    childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, "-up", hit.Length - i, hit[i].collider.transform);
+                    childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, hit.Length - i, hit[i].collider.transform);
                 }
                 else
                 {
                     int index = childs2.Transforms.IndexOf(hit[i].collider.transform);
-                    childs2.Direction[index] = "-up";
                     childs2.Level[index] = hit.Length - i;
                 }
             }
@@ -192,12 +189,11 @@ public class MotorScript : MonoBehaviour
             {
                 if (!childs2.Transforms.Any(Transform => Transform == hit2[i].collider.transform))
                 {
-                    childs2.VeriEkle(hit2[i].collider.name, hit2[i].collider.transform.position, "up", hit2.Length - i, hit2[i].collider.transform);
+                    childs2.VeriEkle(hit2[i].collider.name, hit2[i].collider.transform.position, hit2.Length - i, hit2[i].collider.transform);
                 }
                 else
                 {
                     int index = childs2.Transforms.IndexOf(hit2[i].collider.transform);
-                    childs2.Direction[index] = "up";
                     childs2.Level[index] = hit2.Length - i;
                 }
             }
@@ -213,7 +209,7 @@ public class MotorScript : MonoBehaviour
             {
                 if (childs2.Level[j] == i + 1)
                 {
-                    tempChildren.VeriEkle(childs2.Name[j], childs2.Position[j], childs2.Direction[j], childs2.Level[j], childs2.Transforms[j]);
+                    tempChildren.VeriEkle(childs2.Name[j], childs2.Position[j], childs2.Level[j], childs2.Transforms[j]);
                 }
             }
             for (int j = 0; j < tempChildren.Name.Count; j++)
@@ -226,7 +222,7 @@ public class MotorScript : MonoBehaviour
                     {
                         if (!childs2.Transforms.Any(str => str == item.transform))
                         {
-                            childs2.VeriEkle(item.name, item.transform.position, tempChildren.Direction[j], tempChildren.Level[j], item.transform);
+                            childs2.VeriEkle(item.name, item.transform.position, tempChildren.Level[j], item.transform);
                             increaseBool = true;
                         }
                     }
@@ -256,6 +252,58 @@ public class MotorScript : MonoBehaviour
         print(childs2.Name.Count);
         AddLevels(temp_levels.Count());
     }
+
+    private void AddExpLevel(Transform model)
+    {
+        ColliderAdder(model);
+        for (int i = 0; i < childs2.Name.Count; i++)
+        {
+            RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, childs2.Position[i], 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
+            for (int j = 0; j < hit.Count(); j++)
+            {
+                if (childs2.Transforms[i] == hit[j].transform)
+                {
+                    childs2.Level[i] = hit.Count() - j;
+                }
+                else
+                {
+                    var index = childs2.Transforms.FindIndex(a => a == hit[j].transform);
+                    childs2.Level[index] = hit.Count() - j;
+                }
+            }
+            if (childs2.Level[i] == 0)
+            {
+                for (int j = 0; j < hit.Count(); j++)
+                {
+                    Collider[] colliders = Physics.OverlapBox(hit[j].transform.GetComponent<MeshRenderer>().bounds.center, hit[j].transform.GetComponent<MeshRenderer>().bounds.size / 2);
+                    var index = Array.FindIndex(colliders, a => a.transform == childs2.Transforms[i]);
+                    if (index != -1)
+                    {
+                        childs2.Level[i] = hit.Count() - j;
+                        for (int k = j; k < hit.Count(); k++)
+                        {
+                            childs2.Level[k] = hit.Count() - k + 1;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        List<int> temp_levels = new List<int>();
+        temp_levels = childs2.Level.Distinct().ToList();
+        temp_levels.Sort();
+        for (int i = 0; i < temp_levels.Count; i++)
+        {
+            if (childs2.Level.Any(str => str == temp_levels[i]))
+            {
+                int index = childs2.Level.IndexOf(temp_levels[i]);
+                childs2.Level[index] = i + 1;
+            }
+        }
+        print(childs2.Name.Count);
+        AddLevels(temp_levels.Count());
+    }
+
 
     void Start()
     {
@@ -315,18 +363,6 @@ public class MotorScript : MonoBehaviour
             Vector3 direction = new Vector3(0, 0, 0);
             if (childs2.Level[i] == level)
             {
-                /*switch (childs2.Direction[i])
-                {
-                    case "-up":
-                        direction = -childs2.Transforms[i].up;
-                        break;
-                    case "up":
-                        direction = childs2.Transforms[i].up;
-                        break;
-                    case "-right":
-                        direction = -childs2.Transforms[i].right;
-                        break;
-                }*/
                 direction = childs2.Transforms[i].position.normalized;
                 childs2.Transforms[i].position = Vector3.MoveTowards(childs2.Transforms[i].position, childs2.Transforms[i].position + direction, 5f * child_distance * Time.deltaTime);
             }
@@ -365,20 +401,18 @@ public class MotorScript : MonoBehaviour
         try
         {
             GameObject fbxModel = Resources.Load<GameObject>(selectedOptionText);
-            GameObject temp = Instantiate(fbxModel, new Vector3(0, 0, 0), Quaternion.Euler(0f, 0f, 0f));
-            model = temp.transform;
-            GetLevels();
+            if (fbxModel)
+            {
+                GameObject temp = Instantiate(fbxModel, new Vector3(0, 0, 0), Quaternion.Euler(0f, 0f, 0f));
+                model = temp.transform;
+                //GetLevels();
+                AddExpLevel(model);
+            }
         }
         catch (Exception e)
         {
             Debug.LogError(e);
         }
-    }
-
-    private void LoadAndPrintTransform(string modelName)
-    {
-        
-        
     }
 
     private void Update()
