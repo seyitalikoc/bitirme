@@ -10,14 +10,14 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEditor;
 
-public class MoveChilds2
+public class MoveChilds
 {
     public List<string> Name { get; set; }
     public List<Vector3> Position { get; set; }
     public List<int> Level { get; set; }
     public List<Transform> Transforms { get; set; }
 
-    public MoveChilds2()
+    public MoveChilds()
     {
         Name = new List<string>();
         Position = new List<Vector3>();
@@ -44,7 +44,7 @@ public class MoveChilds2
 
 public class MotorScript : MonoBehaviour
 {    
-    MoveChilds2 childs2 = new MoveChilds2();
+    MoveChilds childs = new MoveChilds();
 
     public int distance = 4;
     private int current_level = 0;
@@ -70,11 +70,11 @@ public class MotorScript : MonoBehaviour
                     MeshCollider meshCollider = parent.gameObject.GetComponent<MeshCollider>();
                     meshCollider.sharedMesh = meshRenderer.GetComponent<MeshFilter>().sharedMesh;
                     count++;
-                    childs2.VeriEkle(parent.gameObject.name, parent.position.normalized, 0, parent);
+                    childs.VeriEkle(parent.gameObject.name, new Vector3(parent.position.x, parent.position.y, parent.position.z), 0, parent);
                 }
                 else
                 {
-                    childs2.VeriEkle(parent.gameObject.name, parent.position.normalized, 0, parent);
+                    childs.VeriEkle(parent.gameObject.name, new Vector3(parent.position.x, parent.position.y, parent.position.z), 0, parent);
                     Debug.LogWarning("MeshRenderer bulunamadı: " + parent.name);
                 }
             }
@@ -113,176 +113,37 @@ public class MotorScript : MonoBehaviour
         });
     }
 
-    private void GetLevels()
-    {
-        current_level = 0;
-        model.position = new Vector3(0, 0, 0);
-        Debug.Log(model.position.normalized);
-        bool IsModelHasCenter = false;
-
-        ColliderAdder(model);
-        print(count);
-        Debug.Log("bitti.");
-        List<Transform> mainparts = new List<Transform>();
-        for (int i = 0; i < model.childCount; i++)
-        {
-            mainparts.Add(model.GetChild(i));
-        }
-        List<int> hitcount = new List<int>();
-        foreach (var item in mainparts)
-        {
-            if (item.name.Contains("Center") || item.name.Contains("center") || item.name.Contains("CENTER"))
-            {
-                RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, -item.up, 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
-                hitcount.Add(hit.Length);
-                for (int i = 0; i < hit.Length; i++)
-                {
-                    if (!childs2.Transforms.Any(Transform => Transform == hit[i].collider.transform))
-                    {
-                        childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, hit.Length - i, hit[i].collider.transform);
-                    }
-                }
-
-                Debug.DrawRay(model.position.normalized, -item.up, Color.blue, 100f);
-                RaycastHit[] hit2 = Physics.RaycastAll(model.position.normalized, item.up, 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
-                hitcount.Add(hit2.Length);
-                for (int i = 0; i < hit2.Length; i++)
-                {
-                    if (!childs2.Transforms.Any(str => str == hit2[i].collider.transform))
-                    {
-                        childs2.VeriEkle(hit2[i].collider.name, hit2[i].collider.transform.position, hit2.Length - i, hit2[i].collider.transform);
-                    }
-                }
-                IsModelHasCenter = true;
-            }
-            else
-            {
-                RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, -item.right, 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
-                hitcount.Add(hit.Length);
-                for (int i = 0; i < hit.Length; i++)
-                {
-                    if (!childs2.Transforms.Any(str => str == hit[i].collider.transform))
-                    {
-                        childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, hit.Length - i, hit[i].collider.transform);
-                    }
-                }
-            }
-        }
-        if (!IsModelHasCenter)
-        {
-            RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, -model.up, 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
-            RaycastHit[] hit2 = Physics.RaycastAll(model.position.normalized, model.up, 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
-
-            for (int i = 0; i < hit.Length; i++)
-            {
-                if (!childs2.Transforms.Any(Transform => Transform == hit[i].collider.transform))
-                {
-                    childs2.VeriEkle(hit[i].collider.name, hit[i].collider.transform.position, hit.Length - i, hit[i].collider.transform);
-                }
-                else
-                {
-                    int index = childs2.Transforms.IndexOf(hit[i].collider.transform);
-                    childs2.Level[index] = hit.Length - i;
-                }
-            }
-            for (int i = 0; i < hit2.Length; i++)
-            {
-                if (!childs2.Transforms.Any(Transform => Transform == hit2[i].collider.transform))
-                {
-                    childs2.VeriEkle(hit2[i].collider.name, hit2[i].collider.transform.position, hit2.Length - i, hit2[i].collider.transform);
-                }
-                else
-                {
-                    int index = childs2.Transforms.IndexOf(hit2[i].collider.transform);
-                    childs2.Level[index] = hit2.Length - i;
-                }
-            }
-        }
-
-        int level_count = hitcount.Max();
-        int level_index = hitcount.IndexOf(level_count);
-
-        for (int i = 0; i < level_count; i++)
-        {
-            MoveChilds2 tempChildren = new MoveChilds2();
-            for (int j = 0; j < childs2.Name.Count; j++)
-            {
-                if (childs2.Level[j] == i + 1)
-                {
-                    tempChildren.VeriEkle(childs2.Name[j], childs2.Position[j], childs2.Level[j], childs2.Transforms[j]);
-                }
-            }
-            for (int j = 0; j < tempChildren.Name.Count; j++)
-            {
-                bool increaseBool = false;
-                Collider[] colliders = Physics.OverlapBox(tempChildren.Transforms[j].GetComponent<MeshRenderer>().bounds.center, tempChildren.Transforms[j].GetComponent<MeshRenderer>().bounds.size / 2);
-                if (colliders.Length > 0)
-                {
-                    foreach (var item in colliders)
-                    {
-                        if (!childs2.Transforms.Any(str => str == item.transform))
-                        {
-                            childs2.VeriEkle(item.name, item.transform.position, tempChildren.Level[j], item.transform);
-                            increaseBool = true;
-                        }
-                    }
-                    if (increaseBool)
-                    {
-                        if (childs2.Level[j] == level_count)
-                        {
-                            level_count++;
-                        }
-                        childs2.Level[j]++;
-                    }
-                }
-            }
-        }
-
-        List<int> temp_levels = new List<int>();
-        temp_levels = childs2.Level.Distinct().ToList();
-        temp_levels.Sort();
-        for (int i = 0; i < temp_levels.Count; i++)
-        {
-            if (childs2.Level.Any(str => str == temp_levels[i]))
-            {
-                int index = childs2.Level.IndexOf(temp_levels[i]);
-                childs2.Level[index] = i + 1;
-            }
-        }
-        print(childs2.Name.Count);
-        AddLevels(temp_levels.Count());
-    }
 
     private void AddExpLevel(Transform model)
     {
         ColliderAdder(model);
-        for (int i = 0; i < childs2.Name.Count; i++)
+        for (int i = 0; i < childs.Name.Count; i++)
         {
-            RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, childs2.Position[i], 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
+            RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, childs.Position[i], 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
             for (int j = 0; j < hit.Count(); j++)
             {
-                if (childs2.Transforms[i] == hit[j].transform)
+                if (childs.Transforms[i] == hit[j].transform)
                 {
-                    childs2.Level[i] = hit.Count() - j;
+                    childs.Level[i] = hit.Count() - j;
                 }
                 else
                 {
-                    var index = childs2.Transforms.FindIndex(a => a == hit[j].transform);
-                    childs2.Level[index] = hit.Count() - j;
+                    var index = childs.Transforms.FindIndex(a => a == hit[j].transform);
+                    childs.Level[index] = hit.Count() - j;
                 }
             }
-            if (childs2.Level[i] == 0)
+            if (childs.Level[i] == 0)
             {
                 for (int j = 0; j < hit.Count(); j++)
                 {
                     Collider[] colliders = Physics.OverlapBox(hit[j].transform.GetComponent<MeshRenderer>().bounds.center, hit[j].transform.GetComponent<MeshRenderer>().bounds.size / 2);
-                    var index = Array.FindIndex(colliders, a => a.transform == childs2.Transforms[i]);
+                    var index = Array.FindIndex(colliders, a => a.transform == childs.Transforms[i]);
                     if (index != -1)
                     {
-                        childs2.Level[i] = hit.Count() - j;
+                        childs.Level[i] = hit.Count() - j;
                         for (int k = j; k < hit.Count(); k++)
                         {
-                            childs2.Level[k] = hit.Count() - k + 1;
+                            childs.Level[k] = hit.Count() - k + 1;
                         }
                         break;
                     }
@@ -290,17 +151,16 @@ public class MotorScript : MonoBehaviour
             }
         }
         List<int> temp_levels = new List<int>();
-        temp_levels = childs2.Level.Distinct().ToList();
+        temp_levels = childs.Level.Distinct().ToList();
         temp_levels.Sort();
         for (int i = 0; i < temp_levels.Count; i++)
         {
-            if (childs2.Level.Any(str => str == temp_levels[i]))
+            if (childs.Level.Any(str => str == temp_levels[i]))
             {
-                int index = childs2.Level.IndexOf(temp_levels[i]);
-                childs2.Level[index] = i + 1;
+                int index = childs.Level.IndexOf(temp_levels[i]);
+                childs.Level[index] = i + 1;
             }
         }
-        print(childs2.Name.Count);
         AddLevels(temp_levels.Count());
     }
 
@@ -308,7 +168,6 @@ public class MotorScript : MonoBehaviour
     void Start()
     {
         ListModels();
-        print("starts");
     }
 
     private void AddLevels(int count)
@@ -330,59 +189,110 @@ public class MotorScript : MonoBehaviour
         string selectedOptionText = change.options[selectedOptionIndex].text;
         int level = int.Parse(selectedOptionText.Split(" ")[1]);
 
-        for (int i = 0; i < level; i++)
+        if (level - current_level >= 0)
         {
-            if (level - current_level > 0)
-            {
-                if (i <= current_level)
-                {
-                    for (int j = 0; j < level - current_level; j++)
-                    {
-                        MoveChild(i+1, distance);
-                    }
-                }
-                else
-                {
-                    for (int j = 0; j < level - i + 1; j++)
-                    {
-                        MoveChild(i+1, distance);
-                    }
-                }
-                
-            }
+            MoveForward(level, distance);
         }
-        //MoveChild(level);
-
+        else
+        {
+            MoveBackward(level, distance);
+        }
         current_level = level;
     }
 
-    private void MoveChild(int level, int child_distance)
+    private Vector3 currentVelocity = Vector3.zero;
+
+    private void MoveForward(int level, int child_distance)
     {
-        for (int i = 0; i < childs2.Name.Count; i++)
+        for (int i = 0; i < childs.Name.Count; i++)
         {
             Vector3 direction = new Vector3(0, 0, 0);
-            if (childs2.Level[i] == level)
+            if (childs.Level[i] <= level)
             {
-                direction = childs2.Transforms[i].position.normalized;
-                childs2.Transforms[i].position = Vector3.MoveTowards(childs2.Transforms[i].position, childs2.Transforms[i].position + direction, 5f * child_distance * Time.deltaTime);
+                if (childs.Level[i] <= current_level)
+                {
+                    direction = childs.Position[i];
+                    direction = childs.Transforms[i].position + (direction * child_distance * (level - current_level)) / 5;
+                    StartCoroutine(SmoothMove(childs.Transforms[i], direction));
+                }
+                else
+                {
+                    direction = childs.Position[i];
+                    direction = childs.Transforms[i].position + (direction * child_distance * (level - childs.Level[i] + 1)) / 5;
+                    StartCoroutine(SmoothMove(childs.Transforms[i], direction));
+                }
             }
+        }
+    }
+
+    private void MoveBackward(int level, int child_distance)
+    {
+        for (int i = 0; i < childs.Name.Count; i++)
+        {
+            Vector3 direction = new Vector3(0, 0, 0);
+            if (childs.Level[i] <= current_level)
+            {
+                if (level == 0)
+                {
+                    StartCoroutine(SmoothMove(childs.Transforms[i], childs.Position[i]));
+                }
+                else if (childs.Level[i] <= level)
+                {
+                    direction = childs.Position[i]; // Negate the direction
+                    int distanceMultiplier = level - current_level;
+                    direction = childs.Transforms[i].position + (direction * child_distance * distanceMultiplier) / 5;
+                    StartCoroutine(SmoothMove(childs.Transforms[i], direction));
+                }
+                else
+                {
+                    direction = childs.Position[i]; // Negate the direction
+                    int distanceMultiplier = current_level - childs.Level[i] + 1;
+                    direction = childs.Transforms[i].position - (direction * child_distance * distanceMultiplier) / 5;
+                    StartCoroutine(SmoothMove(childs.Transforms[i], direction));
+                }
+            }
+        }
+    }
+
+    private void MoveDistanceChange(int level, int child_distance)
+    {
+        for (int i = 0; i < childs.Name.Count; i++)
+        {
+            Vector3 direction = new Vector3(0, 0, 0);
+            if (current_level == 0)
+            {
+                return;
+            }
+            else if (childs.Level[i] <= level)
+            {
+                direction = childs.Position[i] + childs.Position[i] * child_distance * (current_level - childs.Level[i] + 1)/5;
+                StartCoroutine(SmoothMove(childs.Transforms[i], direction));
+            }
+        }
+    }
+
+    IEnumerator SmoothMove(Transform child, Vector3 targetPosition)
+    {
+        Vector3 currentPosition = child.position;
+        Vector3 currentVelocity = Vector3.zero;
+
+        while (Vector3.Distance(currentPosition, targetPosition) > 0.0001f)
+        {
+            currentPosition = Vector3.SmoothDamp(currentPosition, targetPosition, ref currentVelocity, .3f);
+            child.position = currentPosition;
+            yield return null;
         }
     }
 
     public void OnSliderValueChanged()
     {
-        int distance_diff = (int) slider.value;
-        if ((int) slider.value != distance)
+        int distance_diff = (int)slider.value;
+        if (distance != distance_diff)
         {
-            distance_diff = distance_diff - distance;
-            for (int i = 1; i <= current_level; i++)
-            {
-                MoveChild(i, distance_diff);
-            }
-            distance = (int) slider.value;
+            MoveDistanceChange(current_level, distance_diff);
         }
+        distance = (int)slider.value;
     }
-
 
     private void ModelDropdownValueChanged(Dropdown change)
     {
@@ -396,7 +306,8 @@ public class MotorScript : MonoBehaviour
             current_level = 0;
             Leveldropdown.ClearOptions();
             Leveldropdown.value = 0;
-            childs2.Temizle();
+            childs.Temizle();
+            Destroy(model.gameObject);
         }
         try
         {
@@ -405,7 +316,6 @@ public class MotorScript : MonoBehaviour
             {
                 GameObject temp = Instantiate(fbxModel, new Vector3(0, 0, 0), Quaternion.Euler(0f, 0f, 0f));
                 model = temp.transform;
-                //GetLevels();
                 AddExpLevel(model);
             }
         }
