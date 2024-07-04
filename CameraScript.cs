@@ -1,16 +1,24 @@
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+
 
 public class CameraController : MonoBehaviour
 {
-    private Transform _target; // Yakýnlaþtýrýlacak modelin transformu
-    public float minZoom = 10; // Minimum görüþ açýsý
-    public float maxZoom = 350; // Maksimum görüþ açýsý
-    public float zoomSpeed = 10; // Yakýnlaþtýrma hýzý
-    private float currentZoom = 60; // Mevcut görüþ açýsý
+    Vector3 touchStart;
+    public float zoomOutMin = 1;
+    public float zoomOutMax = 8;
 
-    
+
+    private Transform _target; // Yakï¿½nlaï¿½tï¿½rï¿½lacak modelin transformu
+    private Vector3 _targetPosition = new Vector3(0,0,0);
+
+    public float scrollSpeed = 1f;
+    private Vector3 dragOrigin;
+
+
     private float _mouseSensitivity = 3.0f;
     private float _rotationY;
     private float _rotationX;
@@ -21,62 +29,88 @@ public class CameraController : MonoBehaviour
     private Vector3 _smoothVelocity = Vector3.zero;
     private float _smoothTime = 0.2f;
 
-    private Vector2 _rotationXMinMax = new Vector2(-40, 40);
+    private Vector2 _rotationXMinMax = new Vector2(-45, 85);
 
-    private bool canMove = true; // Kameranýn hareketine izin veren kontrol deðiþkeni
+
+    void Start()
+    {
+        transform.LookAt(_targetPosition);
+    }
 
     void Update()
     {
-        if (canMove)
+        if (Input.GetMouseButton(1) || Input.GetMouseButton(0)) // Left mouse button click
         {
-            MotorScript motorScript = GetComponent<MotorScript>();
-            if (motorScript.model != null)
+            PointerEventData eventData = new PointerEventData(EventSystem.current);
+            eventData.position = Input.mousePosition;
+
+            if (EventSystem.current.IsPointerOverGameObject(eventData.pointerId))
             {
-                _target = motorScript.model;
+                // do nothing
             }
-
-            // Mouse scrolunun deðerini okuyup mevcut görüþ açýsýndan çýkart
-            currentZoom -= Input.GetAxis("Mouse ScrollWheel") * zoomSpeed;
-            // Sonucu minimum ve maksimum arasýnda sýnýrla
-            currentZoom = Mathf.Clamp(currentZoom, minZoom, maxZoom);
-
-            if (Input.GetMouseButton(0))
+            else
             {
-                float mouseX = Input.GetAxis("Mouse X") * _mouseSensitivity;
-                float mouseY = Input.GetAxis("Mouse Y") * _mouseSensitivity;
-
-                _rotationY += mouseX;
-                _rotationX += mouseY;
-
-                _rotationX = Mathf.Clamp(_rotationX, _rotationXMinMax.x, _rotationXMinMax.y);
-                Vector3 nextRotation = new Vector3(_rotationX, _rotationY);
-
-                _currentRotation = Vector3.SmoothDamp(_currentRotation, nextRotation, ref _smoothVelocity, _smoothTime);
-                transform.localEulerAngles = _currentRotation;
-
-                if (_target == null)
+                MotorScript motorScript = GetComponent<MotorScript>();
+                if (motorScript.model != null)
                 {
-                    transform.position = new Vector3(0, 0, -3);
+                    _target = motorScript.model;
                 }
-                else
+                
+
+                if (Input.GetMouseButton(0))
                 {
-                    transform.position = _target.position - transform.forward * _distanceFromTarget;
+                    float mouseX = Input.GetAxis("Mouse X") * _mouseSensitivity;
+                    float mouseY = Input.GetAxis("Mouse Y") * _mouseSensitivity;
+
+                    _rotationY += mouseX;
+                    _rotationX += mouseY;
+
+                    _rotationX = Mathf.Clamp(_rotationX, _rotationXMinMax.x, _rotationXMinMax.y);
+                    Vector3 nextRotation = new Vector3(_rotationX, _rotationY);
+
+                    _distanceFromTarget = Vector3.Distance(transform.position, _targetPosition);
+
+                    _currentRotation = Vector3.SmoothDamp(_currentRotation, nextRotation, ref _smoothVelocity, _smoothTime);
+                    transform.localEulerAngles = _currentRotation;
+
+                    if (_target != null)
+                    {
+                        transform.position = _target.position - transform.forward * _distanceFromTarget;
+                        transform.LookAt(_targetPosition);
+                    }
+                    else
+                    {
+                        _targetPosition = new Vector3(0, 0, 0);
+                    }
                 }
             }
         }
 
-        
-    }
+        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scrollInput) > 0f)
+        {
+            // KameranÄ±n bakÄ±ÅŸ doÄŸrultusunda ilerleme vektÃ¶rÃ¼
+            Vector3 moveDirection = Camera.main.transform.forward * scrollInput * scrollSpeed /2 ;
 
-    public void SetCanMove(bool move)
-    {
-        canMove = move; // Kameranýn hareketini etkinleþtirme veya devre dýþý býrakma
-    }
+            // Yeni konumu hesapla ve uygula
+            transform.position += moveDirection;
+        }
 
-    void LateUpdate()
-    {
-        // Kameranýn görüþ açýsýný mevcut görüþ açýsý ile güncelle
-        Camera.main.fieldOfView = currentZoom;
+        /*if (Input.touchCount == 2)
+        {
+            Touch touchZero = Input.GetTouch(0);
+            Touch touchOne = Input.GetTouch(1);
+
+            Vector2 touchZeroPrevPos = touchZero.position - touchZero.deltaPosition;
+            Vector2 touchOnePrevPos = touchOne.position - touchOne.deltaPosition;
+
+            float prevMagnitude = (touchZeroPrevPos - touchOnePrevPos).magnitude;
+            float currentMagnitude = (touchZero.position - touchOne.position).magnitude;
+
+            float difference = currentMagnitude - prevMagnitude;
+
+            Camera.main.orthographicSize = Mathf.Clamp(Camera.main.orthographicSize - difference * 0.01f, zoomOutMin, zoomOutMax);
+        }*/
+
     }
 }
-
