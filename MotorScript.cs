@@ -68,7 +68,9 @@ public class MotorScript : MonoBehaviour
                 {
                     parent.gameObject.AddComponent<MeshCollider>();
                     MeshCollider meshCollider = parent.gameObject.GetComponent<MeshCollider>();
+                    
                     meshCollider.sharedMesh = meshRenderer.GetComponent<MeshFilter>().sharedMesh;
+
                     count++;
                     childs.VeriEkle(parent.gameObject.name, new Vector3(parent.position.x, parent.position.y, parent.position.z), 0, parent);
                 }
@@ -117,9 +119,15 @@ public class MotorScript : MonoBehaviour
     private void AddExpLevel(Transform model)
     {
         ColliderAdder(model);
+        Vector3 model_center = new Vector3(0,0,0);
+        if (model.GetComponent<MeshCollider>())
+        {
+            model_center = model.GetComponent<MeshCollider>().bounds.center;
+        }
         for (int i = 0; i < childs.Name.Count; i++)
         {
-            RaycastHit[] hit = Physics.RaycastAll(model.position.normalized, childs.Position[i], 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
+            
+            RaycastHit[] hit = Physics.RaycastAll(model_center, childs.Position[i], 100f, LayerMask.GetMask("Default"), QueryTriggerInteraction.UseGlobal);
             for (int j = 0; j < hit.Count(); j++)
             {
                 if (childs.Transforms[i] == hit[j].transform)
@@ -315,6 +323,14 @@ public class MotorScript : MonoBehaviour
             if (fbxModel)
             {
                 GameObject temp = Instantiate(fbxModel, new Vector3(0, 0, 0), Quaternion.Euler(0f, 0f, 0f));
+                if (temp.name == "Box(Clone)" || temp.name == "Piggy_Van(Clone)")
+                {
+                    temp.transform.localScale = new Vector3(15f, 15f, 15f);
+                }
+                else 
+                {
+                    temp.transform.localScale = new Vector3(2f, 2f, 2f);
+                }
                 model = temp.transform;
                 AddExpLevel(model);
             }
